@@ -1,0 +1,28 @@
+# Auto-detect text files and normalise to LF on commit, native on checkout
+* text=auto
+
+# Markdown / docs / source : LF
+*.md       text eol=lf
+*.json     text eol=lf
+*.yml      text eol=lf
+*.yaml     text eol=lf
+*.py       text eol=lf
+*.ts       text eol=lf
+*.tsx      text eol=lf
+*.js       text eol=lf
+
+# PowerShell : CRLF (lance de maniere fiable sous Windows)
+*.ps1      text eol=crlf
+*.psm1     text eol=crlf
+*.psd1     text eol=crlf
+
+# Shell scripts : LF
+*.sh       text eol=lf
+
+# Binaries
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.ico      binary
+*.pdf      binary

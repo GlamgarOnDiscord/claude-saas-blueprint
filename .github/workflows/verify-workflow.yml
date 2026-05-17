@@ -1,0 +1,112 @@
+# Verify claude-saas-blueprint Integrity
+name: Verify Workflow
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - 'CLAUDE.md'
+      - 'AGENTS.md'
+      - 'docs/**'
+      - 'templates/**'
+      - 'platforms/**'
+      - 'scripts/**'
+      - '.claude/**'
+      - '.github/workflows/verify-workflow.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify workflow integrity
+        run: python scripts/verify-workflow-integrity.py
+
+      - name: Scan secrets
+        run: python scripts/scan_secrets.py || true
+
+      - name: Check CLAUDE.md line count
+        run: |
+          LINES=$(wc -l < CLAUDE.md)
+          echo "CLAUDE.md: $LINES lines"
+          if [ "$LINES" -gt 120 ]; then
+            echo "::warning::CLAUDE.md exceeds 120 lines ($LINES). Consider trimming — context overload degrades agent adherence."
+          fi
+
+      - name: Check AGENTS.md sync
+        run: |
+          if [ ! -f AGENTS.md ]; then
+            echo "::error::AGENTS.md is missing. Cross-tool portability is broken."
+            exit 1
+          fi
+          for kw in Hexagonal kebab-case PascalCase Zod organizationId APEX; do
+            if ! grep -q "$kw" AGENTS.md; then
+              echo "::warning::AGENTS.md missing keyword: $kw"
+            fi
+          done
+
+  hooks-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate hook scripts syntax
+        shell: pwsh
+        run: |
+          $errors = @()
+          Get-ChildItem .claude/hooks/scripts/*.ps1 | ForEach-Object {
+            $tokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$parseErrors) | Out-Null
+            if ($parseErrors.Count -gt 0) {
+              $errors += "$($_.Name): $($parseErrors.Count) parse errors"
+              $parseErrors | ForEach-Object { Write-Host "  $_" }
+            }
+          }
+          if ($errors.Count -gt 0) {
+            Write-Error "PowerShell hook scripts have syntax errors: $($errors -join '; ')"
+            exit 1
+          }
+          Write-Host "All hook scripts have valid PowerShell syntax."
+
+      - name: Test pre-bash-dangerous (block)
+        shell: pwsh
+        run: |
+          $payload = '{ "tool_input": { "command": "rm -rf /" } }'
+          $payload | powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-bash-dangerous.ps1
+          if ($LASTEXITCODE -ne 2) {
+            Write-Error "Hook should have blocked dangerous command (exit 2), got $LASTEXITCODE"
+            exit 1
+          }
+          Write-Host "OK: dangerous command was blocked."
+
+      - name: Test pre-bash-dangerous (allow)
+        shell: pwsh
+        run: |
+          $payload = '{ "tool_input": { "command": "ls -la" } }'
+          $payload | powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-bash-dangerous.ps1
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Hook should have allowed safe command (exit 0), got $LASTEXITCODE"
+            exit 1
+          }
+          Write-Host "OK: safe command allowed."
+
+      - name: Test pre-edit-protect (secret detection)
+        shell: pwsh
+        run: |
+          # Construit la cle au runtime pour eviter les faux positifs des scanners de secrets
+          $fakeKey = 'sk_' + 'live_' + 'abcdefghijklmnopqrstuvwx'
+          $payload = '{ "tool_input": { "file_path": "src/x.ts", "new_string": "const k = `"' + $fakeKey + '`"" } }'
+          $payload | powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-edit-protect.ps1
+          if ($LASTEXITCODE -ne 2) {
+            Write-Error "Hook should have blocked stripe-like secret (exit 2), got $LASTEXITCODE"
+            exit 1
+          }
+          Write-Host "OK: secret detected and blocked."

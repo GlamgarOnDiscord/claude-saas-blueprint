@@ -1,0 +1,107 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Agent",
+      "TodoWrite",
+      "WebSearch",
+      "WebFetch"
+    ],
+    "deny": []
+  },
+  "preferences": {
+    "autoCompact": false,
+    "language": "fr"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "timeout": 5,
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-bash-dangerous.ps1"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "timeout": 5,
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-edit-protect.ps1"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "timeout": 30,
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/post-edit-format.ps1"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "timeout": 5,
+            "async": true,
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/post-bash-audit.ps1"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "timeout": 5,
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/session-start-context.ps1"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "timeout": 10,
+            "command": "powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File .claude/hooks/scripts/notify-toast.ps1 -Title 'Claude Code' -Message 'En attente de votre reponse...' -Duration 5000"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "timeout": 5,
+            "command": "powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File .claude/hooks/scripts/notify-toast.ps1 -Title 'Claude Code' -Message 'Tache terminee !' -Duration 4000"
+          }
+        ]
+      }
+    ]
+  }
+}
