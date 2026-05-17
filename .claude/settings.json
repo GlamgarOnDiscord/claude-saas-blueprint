@@ -24,7 +24,7 @@
             "type": "command",
             "shell": "powershell",
             "timeout": 5,
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-bash-dangerous.ps1"
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/scripts/pre-bash-dangerous.ps1"
           }
         ]
       },
@@ -35,7 +35,7 @@
             "type": "command",
             "shell": "powershell",
             "timeout": 5,
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-edit-protect.ps1"
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/scripts/pre-edit-protect.ps1"
           }
         ]
       }
@@ -48,7 +48,7 @@
             "type": "command",
             "shell": "powershell",
             "timeout": 30,
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/post-edit-format.ps1"
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/scripts/post-edit-format.ps1"
           }
         ]
       },
@@ -60,7 +60,7 @@
             "shell": "powershell",
             "timeout": 5,
             "async": true,
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/post-bash-audit.ps1"
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/scripts/post-bash-audit.ps1"
           }
         ]
       }
@@ -73,7 +73,7 @@
             "type": "command",
             "shell": "powershell",
             "timeout": 5,
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/session-start-context.ps1"
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/scripts/session-start-context.ps1"
           }
         ]
       }
@@ -86,7 +86,7 @@
             "type": "command",
             "shell": "powershell",
             "timeout": 10,
-            "command": "powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File .claude/hooks/scripts/notify-toast.ps1 -Title 'Claude Code' -Message 'En attente de votre reponse...' -Duration 5000"
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/scripts/notify-toast.ps1 -Title 'Claude Code' -Message 'En attente de votre reponse...' -Duration 5000"
           }
         ]
       }
@@ -98,7 +98,7 @@
             "type": "command",
             "shell": "powershell",
             "timeout": 5,
-            "command": "powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File .claude/hooks/scripts/notify-toast.ps1 -Title 'Claude Code' -Message 'Tache terminee !' -Duration 4000"
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/scripts/notify-toast.ps1 -Title 'Claude Code' -Message 'Tache terminee !' -Duration 4000"
           }
         ]
       }

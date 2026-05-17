@@ -45,12 +45,14 @@ Index complet → `.claude/skills/README.md` · Conventions → `docs/skills-con
 - Escalade : 2 tentatives échouées → demander à l'utilisateur.
 
 ## [Hooks de sécurité]
-Config : `.claude/settings.json` → champ `hooks` (4 types : command, http, prompt, agent ; 21 événements lifecycle).
-- **PreBash** : bloque `rm -rf /`, `DROP DATABASE`, `git push -f origin main`, etc.
-- **PreEdit/PreWrite** : bloque édition de `.env`, credentials, secrets.
-- **PostEdit/PostWrite** : Prettier auto sur `.ts`/`.tsx`/`.js`/`.jsx` (best-effort).
+Config : `.claude/settings.json` → champ `hooks` (5 types : command, http, mcp_tool, prompt, agent).
+Tous nos hooks utilisent **scripts PowerShell** dans `.claude/hooks/scripts/*.ps1` via `"shell": "powershell"`.
+- **PreToolUse Bash** : bloque `rm -rf /`, `DROP DATABASE`, `git push -f origin main`, etc.
+- **PreToolUse Edit|Write** : bloque édition de `.env`, credentials, secrets (AKIA, sk_live, ghp, sk-ant, AIza, clés privées).
+- **PostToolUse Edit|Write** : Prettier auto sur `.ts`/`.tsx`/`.js`/`.jsx` (best-effort).
+- **PostToolUse Bash** : log dans `.claude/bash-audit.jsonl` (gitignore).
 - **SessionStart (compact)** : recharge le contexte projet après compaction.
-- **Windows** : tous les hooks utilisent `"shell": "powershell"` + scripts dans `.claude/hooks/scripts/`.
+- **Notification (idle_prompt) / Stop** : toast Windows.
 Doc → `docs/hooks-et-environnement.md`
 
 ## [Auto Memory]

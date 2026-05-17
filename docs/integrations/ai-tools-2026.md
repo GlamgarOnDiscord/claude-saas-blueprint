@@ -82,7 +82,7 @@ Outils récents qui ont percé et méritent d'être intégrés dans ce workflow.
 
 ### Anthropic Agent SDK
 - Python/TypeScript pour agents programmatiques
-- **v2.1+** : subagents avec YAML frontmatter, agent teams, hooks 21 events
+- **v2.1+** : subagents avec YAML frontmatter, agent teams, hooks (5 types : command, http, mcp_tool, prompt, agent)
 - Custom tools as Python functions
 - In-process MCP server support
 - Context compaction beta (résumé automatique au seuil de tokens)

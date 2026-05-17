@@ -199,19 +199,23 @@ Template → [`templates/subagent.template.md`](templates/subagent.template.md)
 </details>
 
 <details>
-<summary><strong>21 Hook Events</strong> — lifecycle automation, PowerShell-first on Windows</summary>
+<summary><strong>Lifecycle Hooks</strong> — 5 types, all officially documented events, PowerShell-first on Windows</summary>
 
 <br />
 
-4 hook types: **command** · **http** · **prompt** · **agent**
+5 hook types: **command** · **http** · **mcp_tool** · **prompt** · **agent**
+
+Officially-supported events (selection) :
 
 | Phase | Events |
 |-------|--------|
-| Session | `SessionStart` · `SessionEnd` |
-| Tool use | `PreToolUse` · `PostToolUse` |
-| Agent | `AgentStart` · `AgentStop` · `AgentError` |
-| Subagent | `SubagentSpawn` · `SubagentComplete` |
-| Edit/Bash | `PreEdit` · `PostEdit` · `PreBash` · `PostBash` |
+| Session | `SessionStart` · `SessionEnd` · `Setup` |
+| Per turn | `UserPromptSubmit` · `UserPromptExpansion` · `Stop` · `StopFailure` |
+| Per tool call | `PreToolUse` · `PostToolUse` · `PostToolUseFailure` · `PostToolBatch` · `PermissionRequest` · `PermissionDenied` |
+| Subagents | `SubagentStart` · `SubagentStop` · `TaskCreated` · `TaskCompleted` · `TeammateIdle` |
+| Memory / Config | `InstructionsLoaded` · `ConfigChange` · `CwdChanged` · `FileChanged` |
+| Compaction / Notif | `PreCompact` · `PostCompact` · `Notification` · `Elicitation` · `ElicitationResult` |
+| Worktree | `WorktreeCreate` · `WorktreeRemove` |
 
 All hooks use `"shell": "powershell"` + scripts in `.claude/hooks/scripts/*.ps1` — no bash/python3 dependency on Windows.
 

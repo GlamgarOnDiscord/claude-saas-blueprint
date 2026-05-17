@@ -53,6 +53,13 @@ def extract_backticked_paths(text: str) -> list[str]:
         candidate = m.group(1).strip()
         # Tronque a la premiere espace (ignore les arguments CLI)
         candidate = candidate.split()[0] if candidate else ""
+        # Ignorer les glob patterns (contiennent * ou [...])
+        if "*" in candidate or "[" in candidate:
+            continue
+        # Ignorer les fichiers de runtime/log (gitignore)
+        runtime_suffixes = (".jsonl", ".log", "/bash-audit.jsonl")
+        if any(candidate.endswith(s) for s in runtime_suffixes):
+            continue
         if any(candidate.startswith(prefix) for prefix in (
             "docs/", ".claude/", "platforms/", "templates/", "scripts/"
         )):
@@ -186,6 +193,9 @@ def check_skill_references(skill_dirs: set[str]) -> list[tuple[Path, str]]:
     for md_file in ROOT.rglob("*.md"):
         # Skip references/ dans les skills (deja interne)
         if "references" in md_file.parts:
+            continue
+        # Skip docs/skills-conventions.md (cite des skills d'exemple comme /commit /deploy)
+        if md_file.name == "skills-conventions.md":
             continue
         text = read_text(md_file)
         for skill_name in extract_slash_skills(text):
