@@ -77,54 +77,68 @@ jobs:
           }
           Write-Host "All hook scripts have valid PowerShell syntax."
 
-      - name: Test pre-bash-dangerous (block)
+      - name: Test hook — dangerous command blocked
         shell: pwsh
         run: |
-          $payload = '{ "tool_input": { "command": "rm -rf /" } }'
-          $payload | powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-bash-dangerous.ps1
+          $json = '{"tool_input":{"command":"rm -rf /"}}'
+          [System.IO.File]::WriteAllText("$PWD\payload.json", $json)
+          $output = Get-Content payload.json -Raw | powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-bash-dangerous.ps1 2>&1
           $exit = $LASTEXITCODE
           $global:LASTEXITCODE = 0
+          Remove-Item payload.json -ErrorAction SilentlyContinue
+          Write-Host "Hook output: $output"
+          Write-Host "Hook exit code: $exit"
           if ($exit -ne 2) {
             Write-Host "::error::Hook should have blocked dangerous command (exit 2), got $exit"
             exit 1
           }
           Write-Host "OK: dangerous command was blocked."
 
-      - name: Test pre-bash-dangerous (allow)
+      - name: Test hook — safe command allowed
         shell: pwsh
         run: |
-          $payload = '{ "tool_input": { "command": "ls -la" } }'
-          $payload | powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-bash-dangerous.ps1
+          $json = '{"tool_input":{"command":"ls -la"}}'
+          [System.IO.File]::WriteAllText("$PWD\payload.json", $json)
+          $output = Get-Content payload.json -Raw | powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-bash-dangerous.ps1 2>&1
           $exit = $LASTEXITCODE
           $global:LASTEXITCODE = 0
+          Remove-Item payload.json -ErrorAction SilentlyContinue
+          Write-Host "Hook exit code: $exit"
           if ($exit -ne 0) {
             Write-Host "::error::Hook should have allowed safe command (exit 0), got $exit"
             exit 1
           }
           Write-Host "OK: safe command allowed."
 
-      - name: Test pre-edit-protect (secret detection)
+      - name: Test hook — secret in content blocked
         shell: pwsh
         run: |
-          # Build the key at runtime to avoid scanner false positives
           $fakeKey = 'sk_' + 'live_' + 'abcdefghijklmnopqrstuvwx'
-          $payload = '{ "tool_input": { "file_path": "src/x.ts", "new_string": "const k = `"' + $fakeKey + '`"" } }'
-          $payload | powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-edit-protect.ps1
+          $json = '{"tool_input":{"file_path":"src/x.ts","new_string":"' + $fakeKey + '"}}'
+          [System.IO.File]::WriteAllText("$PWD\payload.json", $json)
+          $output = Get-Content payload.json -Raw | powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-edit-protect.ps1 2>&1
           $exit = $LASTEXITCODE
           $global:LASTEXITCODE = 0
+          Remove-Item payload.json -ErrorAction SilentlyContinue
+          Write-Host "Hook output: $output"
+          Write-Host "Hook exit code: $exit"
           if ($exit -ne 2) {
-            Write-Host "::error::Hook should have blocked stripe-like secret (exit 2), got $exit"
+            Write-Host "::error::Hook should have blocked secret (exit 2), got $exit"
             exit 1
           }
           Write-Host "OK: secret detected and blocked."
 
-      - name: Test pre-edit-protect (env file)
+      - name: Test hook — env file blocked
         shell: pwsh
         run: |
-          $payload = '{ "tool_input": { "file_path": ".env", "new_string": "FOO=bar" } }'
-          $payload | powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-edit-protect.ps1
+          $json = '{"tool_input":{"file_path":".env","new_string":"FOO=bar"}}'
+          [System.IO.File]::WriteAllText("$PWD\payload.json", $json)
+          $output = Get-Content payload.json -Raw | powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-edit-protect.ps1 2>&1
           $exit = $LASTEXITCODE
           $global:LASTEXITCODE = 0
+          Remove-Item payload.json -ErrorAction SilentlyContinue
+          Write-Host "Hook output: $output"
+          Write-Host "Hook exit code: $exit"
           if ($exit -ne 2) {
             Write-Host "::error::Hook should have blocked .env edit (exit 2), got $exit"
             exit 1
