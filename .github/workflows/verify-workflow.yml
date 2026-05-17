@@ -15,6 +15,7 @@ on:
       - 'scripts/**'
       - '.claude/**'
       - '.github/workflows/verify-workflow.yml'
+  workflow_dispatch:
 
 jobs:
   verify:
@@ -81,8 +82,10 @@ jobs:
         run: |
           $payload = '{ "tool_input": { "command": "rm -rf /" } }'
           $payload | powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-bash-dangerous.ps1
-          if ($LASTEXITCODE -ne 2) {
-            Write-Error "Hook should have blocked dangerous command (exit 2), got $LASTEXITCODE"
+          $exit = $LASTEXITCODE
+          $global:LASTEXITCODE = 0
+          if ($exit -ne 2) {
+            Write-Host "::error::Hook should have blocked dangerous command (exit 2), got $exit"
             exit 1
           }
           Write-Host "OK: dangerous command was blocked."
@@ -92,8 +95,10 @@ jobs:
         run: |
           $payload = '{ "tool_input": { "command": "ls -la" } }'
           $payload | powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-bash-dangerous.ps1
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "Hook should have allowed safe command (exit 0), got $LASTEXITCODE"
+          $exit = $LASTEXITCODE
+          $global:LASTEXITCODE = 0
+          if ($exit -ne 0) {
+            Write-Host "::error::Hook should have allowed safe command (exit 0), got $exit"
             exit 1
           }
           Write-Host "OK: safe command allowed."
@@ -101,12 +106,27 @@ jobs:
       - name: Test pre-edit-protect (secret detection)
         shell: pwsh
         run: |
-          # Construit la cle au runtime pour eviter les faux positifs des scanners de secrets
+          # Build the key at runtime to avoid scanner false positives
           $fakeKey = 'sk_' + 'live_' + 'abcdefghijklmnopqrstuvwx'
           $payload = '{ "tool_input": { "file_path": "src/x.ts", "new_string": "const k = `"' + $fakeKey + '`"" } }'
           $payload | powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-edit-protect.ps1
-          if ($LASTEXITCODE -ne 2) {
-            Write-Error "Hook should have blocked stripe-like secret (exit 2), got $LASTEXITCODE"
+          $exit = $LASTEXITCODE
+          $global:LASTEXITCODE = 0
+          if ($exit -ne 2) {
+            Write-Host "::error::Hook should have blocked stripe-like secret (exit 2), got $exit"
             exit 1
           }
           Write-Host "OK: secret detected and blocked."
+
+      - name: Test pre-edit-protect (env file)
+        shell: pwsh
+        run: |
+          $payload = '{ "tool_input": { "file_path": ".env", "new_string": "FOO=bar" } }'
+          $payload | powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/scripts/pre-edit-protect.ps1
+          $exit = $LASTEXITCODE
+          $global:LASTEXITCODE = 0
+          if ($exit -ne 2) {
+            Write-Host "::error::Hook should have blocked .env edit (exit 2), got $exit"
+            exit 1
+          }
+          Write-Host "OK: .env edit blocked."
